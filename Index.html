@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Happiest Birthday -- Harshini</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Nunito:wght@300;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f7f4f1; --ink:#1d1d1d; --muted:#6f6f7b; --accent:#ff9fb2; --accent2:#7ab8f0; --gold:#f6c66b;
+      --paper:#fffaf3; --glass:rgba(255,255,255,.65);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:Nunito, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color:var(--ink);
+      background:linear-gradient(135deg,#fdf2f6 0%, #f3fbff 50%, #fff9f0 100%);
+      overflow-x:hidden;
+    }
+    h1,h2,h3{font-family:"Cinzel", serif; margin:0 0 .6rem}
+    p{line-height:1.6}
+    /* Book container */
+    .book{
+      max-width:980px; margin:0 auto; min-height:100vh; padding:40px 20px; position:relative;
+    }
+    /* Page style */
+    section.page{
+      position:absolute; inset:40px 20px; background:var(--paper);
+      border-radius:20px; box-shadow:0 30px 80px rgba(0,0,0,.12);
+      border:1px solid rgba(0,0,0,.06); overflow:hidden;
+      transform-origin:left center; transition:transform .8s cubic-bezier(.22,.61,.36,1), opacity .6s ease;
+      opacity:0; pointer-events:none;
+    }
+    section.page.active{opacity:1; pointer-events:auto; transform:rotateY(0deg)}
+    section.page.turning{transform:rotateY(-18deg); opacity:.9}
+    .page-inner{padding:32px; position:relative; min-height:calc(100vh - 80px)}
+    /* Decorative edges */
+    .edge{
+      position:absolute; inset:0; pointer-events:none;
+      background:radial-gradient(1000px circle at 0% 0%, rgba(246,198,107,.14), transparent 60%),
+                  radial-gradient(800px circle at 100% 100%, rgba(255,159,178,.12), transparent 60%);
+    }
+    /* Header ribbon */
+    .ribbon{
+      position:absolute; top:0; left:0; right:0; height:12px;
+      background:linear-gradient(90deg, var(--accent), var(--gold), var(--accent2));
+      opacity:.5;
+    }
+    /* Buttons */
+    .btn{display:inline-block; padding:12px 18px; border-radius:12px; background:var(--accent); color:#fff; font-weight:700; text-decoration:none; border:none; cursor:pointer; transition:transform .2s ease, box-shadow .2s ease}
+    .btn:hover{transform:translateY(-2px); box-shadow:0 12px 24px rgba(255,159,178,.35)}
+    .btn.alt{background:var(--accent2)}
+    .btn.soft{background:#ffe3ea; color:#b31253}
+    .btn.group{display:inline-flex; gap:10px; flex-wrap:wrap}
+    /* Subtle parallax florals */
+    .floral{
+      position:absolute; inset:-40px -20px; z-index:0; opacity:.28; filter:saturate(120%);
+      background:
+      url('decor/top-left.png') top left no-repeat,
+      url('decor/bottom-right.png') bottom right no-repeat;
+      background-size: 360px, 420px;
+    }
+    /* Title styles */
+    .title{font-size:2.4rem; letter-spacing:1px}
+    .subtitle{color:var(--muted); margin-bottom:16px}
+    /* Quiz */
+    .quiz{max-width:720px; margin:20px auto; background:var(--glass); backdrop-filter:blur(8px); border-radius:16px; padding:16px; border:1px solid rgba(0,0,0,.06)}
+    .q{margin:16px 0 8px; font-weight:700}
+    .opt{display:block; margin:6px 0; padding:10px 12px; border-radius:12px; border:1px solid rgba(0,0,0,.08); cursor:pointer; background:#fff}
+    .opt:hover{background:#fff9f4}
+    /* Letter pages */
+    .letter-hero{display:grid; grid-template-columns:1fr; gap:16px; align-items:center; text-align:center}
+    .big-letter{
+      font-size:5rem; color:#b31253;
+      text-shadow:0 10px 25px rgba(179,18,83,.18);
+      animation:letterPop .8s ease both;
+    }
+    @keyframes letterPop{0%{transform:translateY(12px) scale(.96); opacity:0}100%{transform:translateY(0) scale(1); opacity:1}}
+    .meaning-card{
+      margin:0 auto; max-width:740px; background:#fff; border-radius:16px; padding:18px; border:1px solid rgba(0,0,0,.06);
+      box-shadow:0 12px 36px rgba(0,0,0,.10);
+      animation:fadeUp .6s .3s ease both;
+    }
+    @keyframes fadeUp{0%{transform:translateY(12px); opacity:0}100%{transform:translateY(0); opacity:1}}
+    .bg-photo{
+      position:absolute; inset:0; z-index:-1; background-size:cover; background-position:center;
+      opacity:.22; filter:contrast(104%) saturate(108%);
+    }
+    .caption{color:var(--muted); margin-top:10px}
+    /* Collage */
+    .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-top:16px}
+    .photo-card{height:160px; border-radius:14px; overflow:hidden; border:1px solid rgba(0,0,0,.08); background:#fff}
+    .photo-card img{width:100%; height:100%; object-fit:cover}
+    /* Confetti */
+    .confetti{position:fixed; inset:0; pointer-events:none}
+    .piece{position:absolute; width:8px; height:14px; opacity:.95; animation:fall 4s linear forwards}
+    @keyframes fall{0%{transform:translateY(-20vh) rotate(0)}100%{transform:translateY(120vh) rotate(720deg)}}
+    /* Nav arrows */
+    .nav{position:absolute; bottom:24px; left:32px; right:32px; display:flex; justify-content:space-between; align-items:center}
+    .nav .pager{color:var(--muted); font-weight:700}
+
+    /* Falling hearts */
+.heart {
+  position: fixed;
+  top: -20px;
+  width: 20px;
+  height: 20px;
+  background: pink;
+  clip-path: path("M8.8 2c1.6-1.9 5.1-1.3 5.8 1.4.5 2-1 3.8-2.3 5L8.8 12 5 8.4C3.7 7.2 2.3 5.5 2.8 3.4 3.5.7 7.1.1 8.8 2Z");
+  animation: fall 8s linear infinite;
+  opacity: 0.8;
+  z-index: 0;
+}
+
+@keyframes fall {
+  0% { transform: translateY(-10vh) rotate(0deg); }
+  100% { transform: translateY(110vh) rotate(360deg); }
+}
+
+/* Falling ribbons */
+.ribbon {
+  position: fixed;
+  top: -40px;
+  width: 6px;
+  height: 60px;
+  background: linear-gradient(to bottom, #ff9fb2, #ffd166, #7ab8f0);
+  border-radius: 3px;
+  animation: ribbonFall 10s linear infinite;
+  opacity: 0.7;
+  z-index: 0;
+}
+
+@keyframes ribbonFall {
+  0% { transform: translateY(-10vh) rotate(0deg); }
+  100% { transform: translateY(110vh) rotate(180deg); }
+}
+
+/* Heart cursor */
+body {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><path fill="red" d="M16 29s-13-8.35-13-17A7 7 0 0 1 16 5a7 7 0 0 1 13 7c0 8.65-13 17-13 17z"/></svg>') 16 16, auto;
+}
+
+  </style>
+</head>
+<body>
+  <div class="book" id="book">
+
+    <!-- Loading screen -->
+<div id="loading">
+  <div class="loader">
+    <img src="./img1.gif" alt="Stitch saying hi" />
+    <p>“Aloha!” 🌺 Harshiii......</p>
+  </div>
+</div>
+
+<!-- Main site wrapper -->
+<div id="mainContent" style="display:none;">
+  <!-- Your 20-page proposal site goes here -->
+</div>
+
+<style>
+  #loading {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #fdf2f6, #f3fbff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+  .loader {
+    text-align: center;
+    animation: fadeIn 1.2s ease forwards;
+  }
+  .loader img {
+    width: 220px;
+    animation: bounce 2s infinite;
+  }
+  .loader p {
+    font-family: "Cinzel", serif;
+    font-size: 1.6rem;
+    margin-top: 12px;
+    color: #b31253;
+    animation: fadeInUp 1.5s ease forwards;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<script>
+  // Simulate loading for 3 seconds, then show main content
+  window.addEventListener("load", () => {
+    setTimeout(() => {
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("mainContent").style.display = "block";
+    }, 3000);
+  });
+</script>
+
+    <!-- Page 1: Birthday -->
+    <section class="page active" id="page1">
+      <div class="ribbon"></div><div class="edge"></div><div class="floral"></div>
+      <div class="page-inner">
+        <h1 class="title">Happy Birthday, Lakshmi Harshini ✨</h1>
+        <p class="subtitle">Tonight, Jan 16...!! A cute little girl born...
+          wishing you a day filled with love, laughter, and all the things that make you smile.
+          And a year ahead that's even more amazing than the last.
+          have a fantastic birthday! 🎉🎂🎈
+        </p>
+        <button class="btn" onclick="turnTo(2)">Let's Start the journey</button>
+        <div class="nav"><span class="pager">1 / 19</span><button class="btn alt" onclick="turnTo(2)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- Page 2: Quiz (3 questions) -->
+    <section class="page" id="page2">
+      <div class="ribbon"></div><div class="edge"></div>
+      <div class="page-inner">
+        <h2 class="title">Lets have some funny questions..ok.. 💕</h2>
+        <p class="subtitle">No wrong answers please</p>
+        <div class="quiz">
+          <div class="q">your perfect lazy Sunday?</div>
+          <label class="opt"><input type="radio" name="q1"> Cooking </label>
+          <label class="opt"><input type="radio" name="q1"> Netflix </label>
+          <label class="opt"><input type="radio" name="q1"> Long walk + shopping</label>
+
+          <div class="q">The sound that feels most</div>
+          <label class="opt"><input type="radio" name="q2"> Your laugh</label>
+          <label class="opt"><input type="radio" name="q2">  playlist</label>
+          <label class="opt"><input type="radio" name="q2"> Rain on windows</label>
+
+        </div>
+        <div style="margin-top:16px"><button id="quizNext" class="btn" disabled onclick="turnTo(3)">Continue</button></div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(1)">← Back</button><span class="pager">2 / 19</span><button class="btn alt" id="quizNext2" disabled onclick="turnTo(3)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- Pages 3–17: Letters of "Lakshmi Harshini" (15 letters) -->
+    <!-- L -->
+    <section class="page" id="page3">
+      <div class="bg-photo" style="background-image:url('bg/L.jpg')"></div><div class="edge"></div>
+      <div class="page-inner letter-hero">
+        <h2 class="big-letter">L</h2>
+        <div class="meaning-card">
+          <h3>Love that feels like home</h3>
+          <p>You turn ordinary minutes into warmth. With you, every place becomes softer, kinder, and bright.</p>
+          <p class="caption">First letter, first reason: you’re my calm.</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(2)">← Back</button><span class="pager">3 / 19</span><button class="btn alt" onclick="turnTo(4)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- A -->
+    <section class="page" id="page4">
+      <div class="bg-photo" style="background-image:url('bg/A.jpg')"></div><div class="edge"></div>
+      <div class="page-inner letter-hero">
+        <h2 class="big-letter">A</h2>
+        <div class="meaning-card">
+          <h3>Always, in little and large</h3>
+          <p>My promise is steady — I choose you in quiet mornings and loud sunsets, today and every day.</p>
+          <p class="caption">Always is my favorite word with you.</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(3)">← Back</button><span class="pager">4 / 19</span><button class="btn alt" onclick="turnTo(5)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- K -->
+    <section class="page" id="page5">
+      <div class="bg-photo" style="background-image:url('bg/K.jpg')"></div><div class="edge"></div>
+      <div class="page-inner letter-hero">
+        <h2 class="big-letter">K</h2>
+        <div class="meaning-card">
+          <h3>Kindness that changes rooms</h3>
+          <p>You make people feel seen. Your gentle heart is my favorite kind of beautiful.</p>
+          <p class="caption">Kindness is your quiet superpower.</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(4)">← Back</button><span class="pager">5 / 19</span><button class="btn alt" onclick="turnTo(6)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- S -->
+    <section class="page" id="page6">
+      <div class="bg-photo" style="background-image:url('bg/S.jpg')"></div><div class="edge"></div>
+      <div class="page-inner letter-hero">
+        <h2 class="big-letter">S</h2>
+        <div class="meaning-card">
+          <h3>Strength wrapped in softness</h3>
+          <p>You stand tall with grace. Even on hard days, you carry light.</p>
+          <p class="caption">You’re steady, and still tender.</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(5)">← Back</button><span class="pager">6 / 19</span><button class="btn alt" onclick="turnTo(7)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- H -->
+    <section class="page" id="page7">
+      <div class="bg-photo" style="background-image:url('bg/H1.jpg')"></div><div class="edge"></div>
+      <div class="page-inner letter-hero">
+        <h2 class="big-letter">H</h2>
+        <div class="meaning-card">
+          <h3>Honesty I can lean on</h3>
+          <p>With you, words are safe. Your truth makes our love simple and deep.</p>
+          <p class="caption">Honest hearts build easy love.</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(6)">← Back</button><span class="pager">7 / 19</span><button class="btn alt" onclick="turnTo(8)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- M -->
+    <section class="page" id="page8">
+      <div class="bg-photo" style="background-image:url('bg/M.jpg')"></div><div class="edge"></div>
+      <div class="page-inner letter-hero">
+        <h2 class="big-letter">M</h2>
+        <div class="meaning-card">
+          <h3>Moments turned into memories</h3>
+          <p>You make small routines feel special. I want a lifetime of our quiet magic.</p>
+          <p class="caption">Every day with you is a gentle spark.</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(7)">← Back</button><span class="pager">8 / 19</span><button class="btn alt" onclick="turnTo(9)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- I -->
+    <section class="page" id="page9">
+      <div class="bg-photo" style="background-image:url('bg/I1.jpg')"></div><div class="edge"></div>
+      <div class="page-inner letter-hero">
+        <h2 class="big-letter">I</h2>
+        <div class="meaning-card">
+          <h3>Inspiration in the everyday</h3>
+          <p>You make me want to be better — gentler, braver, more patient, for us.</p>
+          <p class="caption">You turn effort into joy.</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(8)">← Back</button><span class="pager">9 / 19</span><button class="btn alt" onclick="turnTo(10)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- H -->
+    <section class="page" id="page10">
+      <div class="bg-photo" style="background-image:url('bg/H2.jpg')"></div><div class="edge"></div>
+      <div class="page-inner letter-hero">
+        <h2 class="big-letter">H</h2>
+        <div class="meaning-card">
+          <h3>Humor that heals</h3>
+          <p>Your laugh is the sound of home. It’s the melody I look for first.</p>
+          <p class="caption">We’re better when we laugh.</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(9)">← Back</button><span class="pager">10 / 19</span><button class="btn alt" onclick="turnTo(11)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- A -->
+    <section class="page" id="page11">
+      <div class="bg-photo" style="background-image:url('bg/A2.jpg')"></div><div class="edge"></div>
+      <div class="page-inner letter-hero">
+        <h2 class="big-letter">A</h2>
+        <div class="meaning-card">
+          <h3>Attention to what matters</h3>
+          <p>You notice the little things — your care lives in details and in the way you show up.</p>
+          <p class="caption">Your thoughtfulness is art.</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(10)">← Back</button><span class="pager">11 / 19</span><button class="btn alt" onclick="turnTo(12)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- R -->
+    <section class="page" id="page12">
+      <div class="bg-photo" style="background-image:url('bg/R.jpg')"></div><div class="edge"></div>
+      <div class="page-inner letter-hero">
+        <h2 class="big-letter">R</h2>
+        <div class="meaning-card">
+          <h3>Resilience with a tender heart</h3>
+          <p>You bend, don’t break. Your courage is quiet and steady — my favorite kind.</p>
+          <p class="caption">You’re strong where it counts.</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(11)">← Back</button><span class="pager">12 / 19</span><button class="btn alt" onclick="turnTo(13)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- S -->
+    <section class="page" id="page13">
+      <div class="bg-photo" style="background-image:url('bg/S2.jpg')"></div><div class="edge"></div>
+      <div class="page-inner letter-hero">
+        <h2 class="big-letter">S</h2>
+        <div class="meaning-card">
+          <h3>Softness that invites safety</h3>
+          <p>With you, hearts unclench. You make love feel easy and real.</p>
+          <p class="caption">Safe is a feeling — you are it.</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(12)">← Back</button><span class="pager">13 / 19</span><button class="btn alt" onclick="turnTo(14)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- H -->
+    <section class="page" id="page14">
+      <div class="bg-photo" style="background-image:url('bg/H3.jpg')"></div><div class="edge"></div>
+      <div class="page-inner letter-hero">
+        <h2 class="big-letter">H</h2>
+        <div class="meaning-card">
+          <h3>Hope, held together</h3>
+          <p>When the day is heavy, you hold hope for both of us. That’s love.</p>
+          <p class="caption">You carry light. I carry you.</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(13)">← Back</button><span class="pager">14 / 19</span><button class="btn alt" onclick="turnTo(15)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- I -->
+    <section class="page" id="page15">
+      <div class="bg-photo" style="background-image:url('bg/I2.jpg')"></div><div class="edge"></div>
+      <div class="page-inner letter-hero">
+        <h2 class="big-letter">I</h2>
+        <div class="meaning-card">
+          <h3>Intuition that understands</h3>
+          <p>You read the room — and my heart — with such care. It feels like being known.</p>
+          <p class="caption">You hear the quiet parts.</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(14)">← Back</button><span class="pager">15 / 19</span><button class="btn alt" onclick="turnTo(16)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- N -->
+    <section class="page" id="page16">
+      <div class="bg-photo" style="background-image:url('bg/N.jpg')"></div><div class="edge"></div>
+      <div class="page-inner letter-hero">
+        <h2 class="big-letter">N</h2>
+        <div class="meaning-card">
+          <h3>Nurture that stays</h3>
+          <p>You care in ways that last — making people, places, and days softer.</p>
+          <p class="caption">Your care lingers like sunlight.</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(15)">← Back</button><span class="pager">16 / 19</span><button class="btn alt" onclick="turnTo(17)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- I -->
+    <section class="page" id="page17">
+      <div class="bg-photo" style="background-image:url('bg/I3.jpg')"></div><div class="edge"></div>
+      <div class="page-inner letter-hero">
+        <h2 class="big-letter">I</h2>
+        <div class="meaning-card">
+          <h3>Infinite — that’s my plan</h3>
+          <p>No finish line, just a forever of choosing you, again and again.</p>
+          <p class="caption">We’re an always-in-progress kind of love.</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(16)">← Back</button><span class="pager">17 / 19</span><button class="btn alt" onclick="turnTo(18)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- Page 18: Love note -->
+    <section class="page" id="page18">
+      <div class="ribbon"></div><div class="edge"></div>
+      <div class="page-inner">
+        <h2 class="title">Together, Its you </h2>
+        <p class="subtitle">Every letter was a reason. Every reason was a promise.</p>
+        <div class="meaning-card">
+          <p>Wishing you the happiest birthday!
+              May your smile always light up your face
+             and happiness stay with you through life.
+             Here’s to great memories, an even better playlist,
+             and enjoying every moment along the way. 🎶✨</p>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(17)">← Back</button><span class="pager">18 / 19</span><button class="btn alt" onclick="turnTo(19)">Next →</button></div>
+      </div>
+    </section>
+
+    <!-- Page 19: Memory collage -->
+    <section class="page" id="page19">
+      <div class="edge"></div>
+      <div class="page-inner">
+        <h2 class="title">A Little grogeous gallery</h2>
+        <p class="subtitle">Drop in photos that feel like home.</p>
+        <div class="grid">
+          <div class="photo-card"><img src="./1.jpeg" alt="First coffee"></div>
+          <div class="photo-card"><img src="./2.jpeg" alt="Beach day"></div>
+          <div class="photo-card"><img src="./3.jpeg" alt="Sunset walk"></div>
+          <div class="photo-card"><img src="./4.jpeg" alt="Cooking together"></div>
+        </div>
+        <div class="nav"><button class="btn soft" onclick="turnTo(18)">← Back</button><span class="pager">19 / 19</span><button class="btn alt" onclick="turnTo(20)">Next →</button></div>
+      </div>
+    </section>
+
+    
+    <!-- <section class="page" id="page20">
+      <div class="edge"></div>
+      <div class="page-inner" style="text-align:center">
+        <h2 class="title">Lakshmi Harshini, will you marry me?</h2>
+        <p class="subtitle">Two choices, same truth: I love you.</p>
+        <div class="btn group" style="justify-content:center; margin-top:6px">
+          <button class="btn" id="yesBtn">Yes 💖</button>
+          <button class="btn soft" id="noBtn">No 🙈</button>
+        </div>
+        <p class="caption" style="margin-top:10px">Saying yes unlocks our cutest page. Saying no… unlocks an even cuter page.</p>
+        <div class="nav"><button class="btn soft" onclick="turnTo(19)">← Back</button><span class="pager">20 / 20</span></div>
+      </div>
+    </section> -->
+    <canvas id="ribbons"></canvas>
+
+<script>
+(() => {
+  const canvas = document.getElementById("ribbons");
+  const ctx = canvas.getContext("2d");
+
+  // --- Fit canvas to screen (and handle resize) ---
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+  function resize() {
+    canvas.width = Math.floor(window.innerWidth * DPR);
+    canvas.height = Math.floor(window.innerHeight * DPR);
+    canvas.style.width = window.innerWidth + "px";
+    canvas.style.height = window.innerHeight + "px";
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener("resize", resize, { passive: true });
+  resize();
+
+  // --- Style the canvas overlay ---
+  Object.assign(canvas.style, {
+    position: "fixed",
+    inset: "0",
+    pointerEvents: "none",
+    zIndex: "9999"
+  });
+
+  // --- Config ---
+  const COLORS = [
+    "#ff4d6d", "#ffd166", "#06d6a0", "#4cc9f0", "#b517ff",
+    "#ff9f1c", "#f15bb5", "#00bbf9", "#9bdeac", "#fee440"
+  ];
+
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  class Ribbon {
+    constructor(resetY = true) {
+      this.reset(resetY);
+    }
+    reset(resetY) {
+      this.x = rand(0, window.innerWidth);
+      this.y = resetY ? rand(-window.innerHeight, 0) : -rand(50, 300);
+      this.w = rand(8, 18);                 // ribbon width
+      this.h = rand(120, 260);              // ribbon length
+      this.speed = rand(1.2, 3.2);          // fall speed
+      this.swing = rand(0.8, 2.2);          // horizontal sway amplitude
+      this.swingSpeed = rand(0.008, 0.02);  // sway frequency
+      this.phase = rand(0, Math.PI * 2);
+      this.twist = rand(0.01, 0.03);        // twist amount
+      this.color = COLORS[(Math.random() * COLORS.length) | 0];
+      this.alpha = rand(0.75, 1);
+      this.t = 0;
+    }
+    update() {
+      this.t += 1;
+      const sway = Math.sin(this.phase + this.t * (this.swingSpeed * 60)) * this.swing * 20;
+      this.x += sway * 0.02; // subtle drift
+      this.y += this.speed;
+
+      // respawn at top when below screen
+      if (this.y - this.h > window.innerHeight + 40) {
+        this.reset(false);
+        this.x = rand(0, window.innerWidth);
+      }
+    }
+    draw(ctx) {
+      // Create a wavy/twisty ribbon by drawing a strip made of segments
+      const segments = 18;
+      const segLen = this.h / segments;
+
+      ctx.save();
+      ctx.globalAlpha = this.alpha;
+      ctx.fillStyle = this.color;
+
+      for (let i = 0; i < segments; i++) {
+        const yy = this.y - i * segLen;
+        const twist = Math.sin(this.phase + (this.t * 0.03) + i * this.twist * 60);
+        const ww = this.w * (0.6 + 0.4 * Math.abs(twist)); // width changes as it twists
+
+        // slight side-to-side wave down the length
+        const wave = Math.sin(this.phase + i * 0.6 + this.t * 0.03) * 6;
+
+        ctx.beginPath();
+        ctx.roundRect(this.x + wave - ww / 2, yy, ww, segLen + 1, 6);
+        ctx.fill();
+
+        // add a tiny highlight on some segments for depth
+        if (twist > 0.65) {
+          ctx.globalAlpha = this.alpha * 0.25;
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.roundRect(this.x + wave - ww / 2 + ww * 0.15, yy + 2, ww * 0.2, segLen - 4, 6);
+          ctx.fill();
+          ctx.globalAlpha = this.alpha;
+          ctx.fillStyle = this.color;
+        }
+      }
+
+      ctx.restore();
+    }
+  }
+
+  // polyfill-ish for roundRect if needed
+  if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+      r = Math.min(r, w / 2, h / 2);
+      this.moveTo(x + r, y);
+      this.arcTo(x + w, y, x + w, y + h, r);
+      this.arcTo(x + w, y + h, x, y + h, r);
+      this.arcTo(x, y + h, x, y, r);
+      this.arcTo(x, y, x + w, y, r);
+      this.closePath();
+      return this;
+    };
+  }
+
+  // --- Create ribbons (scale with screen size) ---
+  const ribbons = [];
+  function ribbonCount() {
+    const base = Math.floor(window.innerWidth / 35);
+    return Math.max(18, Math.min(60, base));
+  }
+
+  function rebuild() {
+    ribbons.length = 0;
+    const n = ribbonCount();
+    for (let i = 0; i < n; i++) ribbons.push(new Ribbon(true));
+  }
+  rebuild();
+  window.addEventListener("resize", rebuild, { passive: true });
+
+  // --- Animation loop ---
+  function tick() {
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    for (const r of ribbons) {
+      r.update();
+      r.draw(ctx);
+    }
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+</script>
+
+  </div>
+
+  <script>
+    // Page-turn animation controller
+    function turnTo(n){
+      const current = document.querySelector("section.page.active");
+      const next = document.getElementById("page"+n);
+      if(!next || current===next) return;
+      current.classList.add("turning");
+      setTimeout(()=>{
+        document.querySelectorAll("section.page").forEach(p=>p.classList.remove("active","turning"));
+        next.classList.add("active");
+        window.scrollTo({top:0, behavior:"smooth"});
+      }, 280); // brief tilt for page-turn effect
+    }
+
+    // Quiz unlock
+    const groups = ["q1","q2",];
+    function quizCheck(){
+      const ok = groups.every(g => !!document.querySelector("input[name='"+g+"']:checked"));
+      document.getElementById("quizNext").disabled = !ok;
+      document.getElementById("quizNext2").disabled = !ok;
+    }
+    document.querySelectorAll("#page2 input").forEach(inp=>inp.addEventListener("change", quizCheck));
+
+    // Confetti
+    function confetti(count=140){
+      for(let i=0;i<count;i++){
+        const p=document.createElement("div");
+        p.className="piece";
+        p.style.left=Math.random()*100+"%";
+        p.style.top="-20px";
+        p.style.background=["#ffadad","#ffd6a5","#fdffb6","#caffbf","#9bf6ff","#a0c4ff","#bdb2ff"][Math.floor(Math.random()*7)];
+        p.style.animationDelay=Math.random()*1.2+"s";
+        document.body.appendChild(p);
+        setTimeout(()=>p.remove(), 4200);
+      }
+    }
+    document.getElementById("yesBtn").addEventListener("click", ()=>{
+      confetti();
+      setTimeout(()=>{ location.href="yes.html"; }, 1000);
+    });
+    document.getElementById("noBtn").addEventListener("click", ()=>{
+      confetti(80);
+      setTimeout(()=>{ location.href="no.html"; }, 900);
+    });
+
+    // Gentle float on decorative florals when moving mouse (tiny parallax)
+    const book = document.getElementById("book");
+    book.addEventListener("mousemove", (e)=>{
+      const x = (e.clientX / window.innerWidth - .5) * 6;
+      const y = (e.clientY / window.innerHeight - .5) * 6;
+      document.querySelectorAll(".bg-photo").forEach(bg=>{
+        bg.style.transform = `translate(${x}px, ${y}px) scale(1.02)`;
+      });
+    });
+
+    
+function createHeart() {
+  const heart = document.createElement("div");
+  heart.className = "heart";
+  heart.style.left = Math.random() * 100 + "vw";
+  heart.style.animationDuration = (5 + Math.random() * 5) + "s";
+  document.body.appendChild(heart);
+  setTimeout(() => heart.remove(), 10000);
+}
+
+function createRibbon() {
+  const ribbon = document.createElement("div");
+  ribbon.className = "ribbon";
+  ribbon.style.left = Math.random() * 100 + "vw";
+  ribbon.style.animationDuration = (6 + Math.random() * 6) + "s";
+  document.body.appendChild(ribbon);
+  setTimeout(() => ribbon.remove(), 12000);
+}
+
+// Spawn continuously
+setInterval(createHeart, 600);
+setInterval(createRibbon, 1500);
+</script>
+
+  </script>
+</body>
+</html>
